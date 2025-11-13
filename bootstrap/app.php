@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureUserHasType;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -15,7 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Middleware route alias for Sanctum authentication
         $middleware->alias([
-            'auth.sanctum' => EnsureFrontendRequestsAreStateful::class
+            'auth.sanctum' => EnsureFrontendRequestsAreStateful::class,
+            'user.type' => EnsureUserHasType::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

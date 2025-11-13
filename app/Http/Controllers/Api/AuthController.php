@@ -4,14 +4,24 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\UserService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    protected $userService;
+
+    public function __construct(UserService $userService)
+    {
+        $this->userService = $userService;
+    }
+
     //register
     public function register(Request $request)
     {
+        $type = $request->route('type');
+
         // Validate the request
         $data = $request->validate([
             'name' => 'required|string|max:255',
@@ -19,12 +29,7 @@ class AuthController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
-        // Create the user
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($data['password'])
-        ]);
+        $user = $this->userService->registerUser($data, $type);
 
         // Generate token
         $token = $user->createToken('auth_token')->plainTextToken;
