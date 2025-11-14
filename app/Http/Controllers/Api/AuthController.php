@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\UserService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
@@ -46,32 +47,21 @@ class AuthController extends Controller
     //login
     public function login(Request $request)
     {
-        // Validate the request
+        // validate the request
         $data = $request->validate([
-            'email' => 'required|string|email',
-            'password' => 'required|string',
+            'email' => 'required|string|email|max:255',
+            'password' => 'required|string|min:8',
         ]);
-
-        // Find the user
+        // check if the user exists
         $user = User::where('email', $data['email'])->first();
 
-        // Check if user exists and password is correct
-        if (!$user || !Hash::check($data['password'], $user->password)) {
-            return response()->json([
-                'message' => 'Invalid credentials'
-            ], 401);
+        if (! $user || ! Hash::check($data['password'], $user->password)) {
+            return response()->json(['message' => 'Invalid credentials'], 401);
         }
-
-        // Generate token
+        // generate a token
         $token = $user->createToken('auth_token')->plainTextToken;
-
-        // Return response
-        return response()->json([
-            'data' => $user,
-            'message' => 'User logged in successfully',
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-        ], 200);
+        return response()->json(['message' => 'User logged in successfully', 'user' => $user, 'token' => $token], 200);
+        
     }
 
     //logout
