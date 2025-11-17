@@ -1,0 +1,109 @@
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Product;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+
+class ProductController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        $products = Product::all();
+        return response()->json([
+            'success' => true,
+            'data' => $products,
+            'message' => 'Products retrieved successfully',
+        ], 200);
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:products',
+            'description' => 'nullable|string',
+            'price' => 'required|numeric|min:0',
+            'stock' => 'integer|min:0',
+            'sku' => 'required|string|max:100|unique:products',
+            'is_active' => 'boolean',
+        ]);
+
+        $data['user_id'] = $request->user()->id;
+        
+        $product = Product::create($data);
+
+        return response()->json([
+            'success' => true,
+            'data' => $product,
+            'message' => 'Product created successfully',
+        ], 201);
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Product $product)
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $product,
+            'message' => 'Product retrieved successfully',
+        ], 200);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, Product $product)
+    {
+        // validate the request for update or merge with existing data 
+
+        $data = $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'slug' => 'sometimes|required|string|max:255|unique:products,slug,' . $product->id,
+            'description' => 'nullable|string',
+            'price' => 'sometimes|required|numeric|min:0',
+            'stock' => 'sometimes|integer|min:0',
+            'sku' => 'sometimes|required|string|max:100|unique:products,sku,' . $product->id,
+            'is_active' => 'sometimes|boolean',
+        ]);
+
+        $product->fill($data);
+        
+        if(isset($data['name'])) {
+            $product->slug = Str::slug($data['name'], '-');
+        }
+
+        $product->save();
+
+        return response()->json([
+            'success' => true,
+            'data' => $product,
+            'message' => 'Product updated successfully',
+        ], 200);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Product $product)
+    {
+        $product->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Product deleted successfully',
+        ], 200);
+        
+    }
+}

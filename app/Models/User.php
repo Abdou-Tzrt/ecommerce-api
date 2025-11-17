@@ -26,6 +26,9 @@ class User extends Authenticatable
         'password',
         'type',
     ];
+    
+    protected $guard_name = 'sanctum';
+
 
     /**
      * The attributes that should be hidden for serialization.
@@ -73,5 +76,10 @@ class User extends Authenticatable
             'password' => Hash::make($data['password']),
             'type' => $type,
         ]);
+    }
+
+    public function products()
+    {
+        return $this->hasMany(Product::class);
     }
 }

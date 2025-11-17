@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -10,52 +9,36 @@ use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run()
     {
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         // Define product permissions
-        Permission::create(['name' => 'view products']);
-        Permission::create(['name' => 'create products']);
-        Permission::create(['name' => 'edit products']);
-        Permission::create(['name' => 'delete products']);
+        Permission::create(['name' => 'view products', 'guard_name' => 'sanctum']);
+        Permission::create(['name' => 'create products', 'guard_name' => 'sanctum']);
+        Permission::create(['name' => 'edit products', 'guard_name' => 'sanctum']);
+        Permission::create(['name' => 'delete products', 'guard_name' => 'sanctum']);
 
         // Define order permissions
-        Permission::create(['name' => 'view orders']);
-        Permission::create(['name' => 'create orders']);
-        Permission::create(['name' => 'update orders']);
-        Permission::create(['name' => 'cancel orders']);
+        Permission::create(['name' => 'view orders', 'guard_name' => 'sanctum']);
+        Permission::create(['name' => 'create orders', 'guard_name' => 'sanctum']);
+        Permission::create(['name' => 'update orders', 'guard_name' => 'sanctum']);
+        Permission::create(['name' => 'cancel orders', 'guard_name' => 'sanctum']);
 
         // Define user permissions
-        Permission::create(['name' => 'view users']);
-        Permission::create(['name' => 'edit users']);
+        Permission::create(['name' => 'view users', 'guard_name' => 'sanctum']);
+        Permission::create(['name' => 'edit users', 'guard_name' => 'sanctum']);
 
         // Define delivery permissions
-        Permission::create(['name' => 'view deliveries']);
-        Permission::create(['name' => 'update delivery status']); // pendding, shipped, delivered
+        Permission::create(['name' => 'view deliveries', 'guard_name' => 'sanctum']);
+        Permission::create(['name' => 'update delivery status', 'guard_name' => 'sanctum']);
 
         // Create Admin role and assign all permissions
-        $adminRole = Role::create(['name' => 'admin']);
-        $adminRole->givePermissionTo([
-            'view products',
-            'create products',
-            'edit products',
-            'delete products',
-            'view orders',
-            'create orders',
-            'update orders',
-            'cancel orders',
-            'view users',
-            'edit users',
-            'view deliveries',
-            'update delivery status',
-        ]);
+        $adminRole = Role::create(['name' => 'admin', 'guard_name' => 'sanctum']);
+        $adminRole->givePermissionTo(Permission::all());
 
         // Create Customer role with limited permissions
-        $customerRole = Role::create(['name' => 'customer']);
+        $customerRole = Role::create(['name' => 'customer', 'guard_name' => 'sanctum']);
         $customerRole->givePermissionTo([
             'view products',
             'view orders',
@@ -64,7 +47,7 @@ class RolesAndPermissionsSeeder extends Seeder
         ]);
 
         // Create Delivery role
-        $deliveryRole = Role::create(['name' => 'delivery']);
+        $deliveryRole = Role::create(['name' => 'delivery', 'guard_name' => 'sanctum']);
         $deliveryRole->givePermissionTo([
             'view deliveries',
             'update delivery status',

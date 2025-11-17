@@ -1,13 +1,15 @@
 <?php
 
-use App\Http\Controllers\Api\AuthController;
-use App\Models\User;
+use App\Http\Controllers\Api\ProductController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Spatie\Permission\Models\Role;
 
 
+Route::apiResource('/products', ProductController::class)->only(['index', 'show']);
 
+Route::middleware(['auth:sanctum', 'permission:create products'])->group(function () {
+    Route::apiResource('products', ProductController::class)->except(['index', 'show']);
+});
 
 require_once __DIR__.'/auth.php';
 
