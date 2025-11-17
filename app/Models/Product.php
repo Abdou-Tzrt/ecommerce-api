@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'name',
@@ -21,15 +22,31 @@ class Product extends Model
         'user_id',
     ];
 
-    public function isInStock(): bool
-    {
-        return $this->stock > 0;
-    }
-
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    public function isInStock(): bool
+    {
+        return $this->stock > 0;
+    }
+
+    protected static function booted()
+    {
+        static::addGlobalScope('active', function ($query) {
+            $query->where('is_active', true);
+        });
+    }
+
+    public function scopePriceBetween($query, $min, $max)
+    {
+        return $query->whereBetween('price', [$min, $max]);
+    }
+
+    public function getFormattedNameAttribute()
+    {
+        return ucwords($this->name);
+    }
 
 }

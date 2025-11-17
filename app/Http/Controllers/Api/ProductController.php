@@ -39,7 +39,7 @@ class ProductController extends Controller
         ]);
 
         $data['user_id'] = $request->user()->id;
-        
+
         $product = Product::create($data);
 
         return response()->json([
@@ -106,4 +106,79 @@ class ProductController extends Controller
         ], 200);
         
     }
+
+    // undo delete product with testing if user has admin role
+    public function restore(Request $request, Product $product)
+    {
+        if (!$request->user()->hasRole('admin')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You are not authorized to restore this product',
+            ], 403);
+        }
+        $product->restore();
+        return response()->json([
+            'success' => true,
+            'data' => $product,
+            'message' => 'Product restored successfully',
+        ], 200);
+    }
+
+    // permanent "forcing" delete
+    public function permanentDelete(Request $request, Product $product)
+    {
+        if ($request->user()->hasRole('admin')) {
+            $product->forceDelete();
+            return response()->json([
+                'success' => true,
+                'message' => 'Product permanently deleted successfully',
+            ], 200);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => 'You are not authorized to perform this action',
+        ], 403);
+    }
+
+    // index of admin products
+    public function adminIndex(Request $request)
+    {
+        if ($request->user()->hasRole('admin')) {
+            $products = Product::withTrashed()->get();
+            return response()->json([
+                'success' => true,
+                'message' => 'Products retrieved successfully',
+                'data' => $products
+            ], 200);
+        }
+        return response()->json([
+            'success' => false,
+            'message' => 'You are not authorized to perform this action',
+        ], 403);
+    }
+
+    // filter products by name, description, price
+    public function filter(Request $request)
+    {
+        $products = Product::query()
+            ->when($request->price_min, fn($query) =>
+                $query->where('price', '>=', $request->price_min))
+            ->when($request->price_max, fn($query) =>
+                $query->where('price', '<=', $request->price_max))
+            ->when($request->q, fn($query, $q) =>
+                $query->where(fn($subQuery) =>
+                    $subQuery->where('name', 'like', "%{$q}%")
+                             ->orWhere('description', 'like', "%{$q}%")
+                )
+            )->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Products retrieved successfully',
+            'data' => $products
+        ], 200);
+    }
+
+
 }

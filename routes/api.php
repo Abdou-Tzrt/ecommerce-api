@@ -11,5 +11,7 @@ Route::middleware(['auth:sanctum', 'permission:create products'])->group(functio
     Route::apiResource('products', ProductController::class)->except(['index', 'show']);
 });
 
+Route::post('/filter', [ProductController::class, 'filter']);
+
 require_once __DIR__.'/auth.php';
 
