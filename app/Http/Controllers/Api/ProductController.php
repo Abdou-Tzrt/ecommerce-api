@@ -15,7 +15,9 @@ class ProductController extends Controller
      */
     public function index()
     {
-        $products = Product::all();
+        // eager load category relationship
+        $products = Product::with('category')->get();
+        
         return response()->json([
             'success' => true,
             'data' => $products,
@@ -36,15 +38,21 @@ class ProductController extends Controller
             'stock' => 'integer|min:0',
             'sku' => 'required|string|max:100|unique:products',
             'is_active' => 'boolean',
+            'categories' => 'array',
+            'categories.*' => 'exists:categories,id',
         ]);
 
         $data['user_id'] = $request->user()->id;
 
         $product = Product::create($data);
 
+        if (isset($data['categories'])) {
+            $product->category()->attach($data['categories']);
+        }
+
         return response()->json([
             'success' => true,
-            'data' => $product,
+            'data' => $product->load('categories'), // load categories relationship
             'message' => 'Product created successfully',
         ], 201);
     }
@@ -76,6 +84,8 @@ class ProductController extends Controller
             'stock' => 'sometimes|integer|min:0',
             'sku' => 'sometimes|required|string|max:100|unique:products,sku,' . $product->id,
             'is_active' => 'sometimes|boolean',
+            'categories' => 'sometimes|array',
+            'categories.*' => 'exists:categories,id',
         ]);
 
         $product->fill($data);
@@ -86,9 +96,13 @@ class ProductController extends Controller
 
         $product->save();
 
+        if (isset($data['categories'])) {
+            $product->category()->sync($data['categories']);
+        }
+
         return response()->json([
             'success' => true,
-            'data' => $product,
+            'data' => $product->load('categories'),
             'message' => 'Product updated successfully',
         ], 200);
     }
