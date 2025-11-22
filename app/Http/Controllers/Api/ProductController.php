@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ProductController extends Controller
@@ -15,8 +17,10 @@ class ProductController extends Controller
      */
     public function index()
     {
-        // eager load category relationship
-        $products = Product::with('category')->get();
+        // cache products for 5 minutes (300 seconds) 
+        $products = Cache::remember('products', 300, function () {
+            return Product::with('categories')->get();
+        });
         
         return response()->json([
             'success' => true,
@@ -40,13 +44,21 @@ class ProductController extends Controller
             'is_active' => 'boolean',
             'categories' => 'array',
             'categories.*' => 'exists:categories,id',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
+        // assign the authenticated user id
         $data['user_id'] = $request->user()->id;
 
+        //check if image is uploaded
+        if ($request->hasFile('image')) {
+            $imageName = $data['slug'] .  '-' . time() . '.' . $request->image->extension();
+            $data['image'] = $request->file('image')->storeAs('products', $imageName, 'public');
+        }
+        
         $product = Product::create($data);
 
-        if (isset($data['categories'])) {
+        if (!empty($data['categories'])) {
             $product->category()->attach($data['categories']);
         }
 
@@ -62,9 +74,14 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
+        // cache individual product for 5 minutes (300 seconds)
+        $productCached = Cache::remember("product_{$product->id}", 300, function () use ($product) {
+            return $product->load('categories');
+        });
+
         return response()->json([
             'success' => true,
-            'data' => $product,
+            'data' => $productCached,
             'message' => 'Product retrieved successfully',
         ], 200);
     }
@@ -86,6 +103,7 @@ class ProductController extends Controller
             'is_active' => 'sometimes|boolean',
             'categories' => 'sometimes|array',
             'categories.*' => 'exists:categories,id',
+            'image' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
         $product->fill($data);
@@ -94,11 +112,23 @@ class ProductController extends Controller
             $product->slug = Str::slug($data['name'], '-');
         }
 
+        //check if image is uploaded
+        if ($request->hasFile('image')) {
+            $imageName = $product->slug .  '-' . time() . '.' . $request->image->extension();
+            $data['image'] = $request->file('image')->storeAs('products', $imageName, 'public');
+            $product->image = $data['image'];
+        }
+
         $product->save();
 
         if (isset($data['categories'])) {
             $product->category()->sync($data['categories']);
         }
+
+        // forget cache for this product
+        Cache::forget("product_{$product->id}");
+        // forget cache for products list
+        Cache::forget('products');
 
         return response()->json([
             'success' => true,
@@ -112,6 +142,16 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
+        // if product has image delete it from storage
+        if ($product->image) {
+            Storage::disk('public')->delete($product->image);
+        }
+
+        // forget cache for this product
+        Cache::forget("product_{$product->id}");
+        // forget cache for products list
+        Cache::forget('products');
+
         $product->delete();
 
         return response()->json([

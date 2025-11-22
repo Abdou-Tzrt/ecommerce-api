@@ -21,6 +21,7 @@ class Product extends Model
         'sku',
         'is_active',
         'user_id',
+        'image'
     ];
 
     public function user(): BelongsTo
@@ -53,6 +54,11 @@ class Product extends Model
     public function getFormattedNameAttribute()
     {
         return ucwords($this->name);
+    }
+
+    public function getImageUrlAttribute()
+    {
+        return $this->image ? asset('storage/' . $this->image) : null;
     }
 
 }
