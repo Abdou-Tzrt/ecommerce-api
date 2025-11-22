@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CategoryController;
 use Illuminate\Http\Request;
@@ -20,6 +21,10 @@ Route::middleware(['auth:sanctum', 'permission:create categories'])->group(funct
 
 Route::get('/categories/{category}/products', [CategoryController::class, 'products']);
 
+
+Route::middleware(['auth:sanctum', 'permission:create orders'])->group(function () {
+    Route::apiResource('cart', CartController::class)->except(['show']);
+});
 
 Route::post('/filter', [ProductController::class, 'filter']);
 
