@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\CheckoutController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -24,6 +25,11 @@ Route::get('/categories/{category}/products', [CategoryController::class, 'produ
 
 Route::middleware(['auth:sanctum', 'permission:create orders'])->group(function () {
     Route::apiResource('cart', CartController::class)->except(['show']);
+
+    // handle checkout order routes
+   Route::post('/checkout', [CheckoutController::class, 'checkout']);
+   Route::get('/orders', [CheckoutController::class, 'orderHistory']);
+   Route::get('/orders/{id}', [CheckoutController::class, 'orderDetails']);
 });
 
 Route::post('/filter', [ProductController::class, 'filter']);
