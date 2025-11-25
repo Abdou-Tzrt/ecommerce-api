@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enum\OrderStatus;
+use App\Enum\PaymentStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -24,11 +26,16 @@ class Order extends Model
         'total',
         'payment_method',
         'payment_status',
-        'transaction_id',
-        'paid_at',
         'order_number',
         'notes',
         'transaction_id',
+        'paid_at',
+    ];
+
+    protected $casts = [
+        'status' => OrderStatus::class,
+        'payment_status' => PaymentStatus::class,
+        'paid_at' => 'datetime',
     ];
 
     public function user()
@@ -51,4 +58,34 @@ class Order extends Model
 
         return $orderNumber;
     }
+
+    // check if order can be cancelled
+    public function canBeCancelled(): bool
+    {
+        return in_array($this->status, [
+            OrderStatus::PENDING, 
+            OrderStatus::PAID, 
+            OrderStatus::PROCESSING
+        ]);
+    }
+
+    // mark order as paid
+    public function markIsPaid($transactionId)
+    {
+        $this->update([
+            'status' => OrderStatus::PAID,
+            'payment_status' => PaymentStatus::COMPLETED,
+            'transaction_id' => $transactionId,
+            'paid_at' => now(),
+        ]);
+    }
+
+    // mark as failed payment
+    public function markPaymentAsFailed()
+    {
+        $this->update([
+            'payment_status' => PaymentStatus::FAILED,
+        ]);
+    }
+
 }
