@@ -69,6 +69,12 @@ class Order extends Model
         ]);
     }
 
+    public function canAcceptPayment(): bool
+    {
+        return $this->payment_status === PaymentStatus::PENDING || 
+            $this->payment_status === PaymentStatus::FAILED;
+    }
+
     // mark order as paid
     public function markIsPaid($transactionId)
     {

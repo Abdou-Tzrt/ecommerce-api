@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\PaymentController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -30,7 +31,17 @@ Route::middleware(['auth:sanctum', 'permission:create orders'])->group(function 
    Route::post('/checkout', [CheckoutController::class, 'checkout']);
    Route::get('/orders', [CheckoutController::class, 'orderHistory']);
    Route::get('/orders/{id}', [CheckoutController::class, 'orderDetails']);
+
+   // create payment for an order
+   Route::post('/orders/{order}/payments', [PaymentController::class, 'createPayment']);
+
+   // Confirm payment status
+   Route::get('/payments/{paymentId}/confirm', [PaymentController::class, 'confirmPayment']);
 });
+
+// Stripe webhook endpoint
+Route::post('/webhooks/stripe', [PaymentController::class, 'stripeWebhook']);
+
 
 Route::post('/filter', [ProductController::class, 'filter']);
 
